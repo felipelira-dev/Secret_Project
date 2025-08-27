@@ -49,7 +49,7 @@ def login(usuario, senha):
 
 
 # --- Exemplo de uso ---
-if "_name_" == "_main_":
+if __name__ == "__main__":
     # Cadastrando alguns usuários
     cadastrar_usuario("felipe", "minhaSenhaSuperForte")
     cadastrar_usuario("maria", "senhaDaMaria123")
