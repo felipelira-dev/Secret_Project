@@ -1,8 +1,14 @@
 import bcrypt
 import json
 import os
+import threading
+import time
+import argparse 
 
 ARQUIVO_USUARIOS = "usuarios.json"
+
+lock = threading.Lock()
+senha_encontrada = False
 
 def carregar_usuarios():
     """Carrega todos os usuários do arquivo JSON."""
