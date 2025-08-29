@@ -54,21 +54,58 @@ def login(usuario, senha):
         print("❌ Senha incorreta.")
 
 
-# --- Exemplo de uso ---
 if __name__ == "__main__":
-    # Cadastrando alguns usuários
-    cadastrar_usuario("felipe", "minhaSenhaSuperForte")
-    cadastrar_usuario("maria", "senhaDaMaria123")
+    # --- Configuração da Linha de Comando ---
+    parser = argparse.ArgumentParser(description="Ferramenta de ataque de dicionário para senhas com bcrypt.")
+    parser.add_argument("--usuario", required=True, help="Nome do usuário para o ataque.")
+    parser.add_argument("--wordlist", required=True, help="Caminho para o arquivo com a lista de senhas.")
     
-    print("\n--- Testando o Login ---")
-    
-    # Tentativa de login bem-sucedida
-    login("felipe", "minhaSenhaSuperForte")
-    
-    # Tentativa de login com senha incorreta
-    login("felipe", "senhaErrada")
+    args = parser.parse_args()
 
-    # Tentativa de login de um usuário que não existe
-    login("joao", "senhaQualquer")
+    # Acessa os argumentos passados pelo usuário
+    TARGET_USERNAME = args.usuario
+    WORDLIST_FILE = args.wordlist
 
+    # Lógica principal do ataque
+    usuarios = carregar_usuarios()
+    
+    # Valida se o usuário existe
+    if TARGET_USERNAME not in usuarios:
+        print(f"❌ Usuário '{TARGET_USERNAME}' não encontrado. Certifique-se de que ele foi cadastrado.")
+    else:
+        # Valida se o arquivo de wordlist existe
+        try:
+            with open(WORDLIST_FILE, "r") as f:
+                passwords = [line.strip() for line in f.readlines()]
+        except FileNotFoundError:
+            print(f"❌ Arquivo de wordlist '{WORDLIST_FILE}' não encontrado.")
+        else:
+            print(f"Iniciando ataque para o usuário: {TARGET_USERNAME}")
+            print(f"Total de senhas a serem testadas: {len(passwords)}")
+
+            num_threads = 4  # Você pode ajustar esse número para testar
+            chunk_size = len(passwords) // num_threads
+            chunks = [passwords[i:i + chunk_size] for i in range(0, len(passwords), chunk_size)]
+            
+            target_hash = usuarios[TARGET_USERNAME]["senha"].encode('utf-8')
+
+            threads = []
+            start_time = time.time() # Começa a contar o tempo
+
+            # Cria e inicia os threads
+            for chunk in chunks:
+                thread = threading.Thread(target=brute_force_attack_thread, args=(TARGET_USERNAME, target_hash, chunk))
+                threads.append(thread)
+                thread.start()
+
+            # Espera todos os threads terminarem
+            for thread in threads:
+                thread.join()
+
+            end_time = time.time()
+            
+            if not senha_encontrada:
+                print("\n❌ [FALHA] Senha não encontrada na wordlist.")
+
+            print(f"Tempo total do ataque: {end_time - start_time:.2f} segundos.")
 
